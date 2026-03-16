@@ -29,7 +29,7 @@ async def seed_rules() :
         structuring_a  = ThresholdRule(
             name="structuring_lower_bound",
             rule_type=PolicyRuleType.THRESHOLD,
-            source_text="Structuring — amount just under reporting threshold",
+            source_text="Structuring â€” amount just under reporting threshold",
             severity="HIGH",
             field_target="amount_paid",
             operator=">=",
@@ -39,7 +39,7 @@ async def seed_rules() :
         structuring_b = ThresholdRule(
         name="structuring_upper_bound",
         rule_type=PolicyRuleType.THRESHOLD,
-        source_text="Structuring — amount just under reporting threshold",
+        source_text="Structuring â€” amount just under reporting threshold",
         severity="HIGH",
         field_target="amount_paid",
         operator="<=",
@@ -50,7 +50,7 @@ async def seed_rules() :
         ach_format = FormatRule(
             name="ach_format_detection",
             rule_type=PolicyRuleType.FORMAT,
-            source_text="ACH payment format flagged — primary laundering vector",
+            source_text="ACH payment format flagged â€” primary laundering vector",
             severity="HIGH",
             time_window_hours=None,
             field_target="payment_currency",
@@ -72,7 +72,7 @@ async def seed_rules() :
         chain =  ChainRule(
             name="cycle_detection",
             rule_type="CHAIN",
-            source_text="Cycle detected — money returned to origin account",
+            source_text="Cycle detected â€” money returned to origin account",
             severity="HIGH",
             time_window_hours=72,
             min_hops=2,
