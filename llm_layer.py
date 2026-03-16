@@ -67,9 +67,6 @@ Analyze this account and return your JSON assessment.
 
         # PARSE RESPONSE
         data = response.json()
-        print(f"Status code: {response.status_code}")
-        print(f"Raw response: {data}")
-        print(f"Raw LM Studio response: {data}")  # ← add this
         raw_text = data["choices"][0]["message"]["content"]
 
         # clean and parse JSON

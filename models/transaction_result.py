@@ -7,6 +7,7 @@ from typing import List, Optional
 class TransactionResult :
 
     account : str
+    transactions : List[dict] = field(default_factory= list)
     alerts: List[dict]  = field(default_factory= list)
     rule_names_fired: List[str] = field(default_factory= list)
     total_amount_flagged: float = 0.0
