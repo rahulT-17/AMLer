@@ -8,6 +8,8 @@ from policy_rules_model import PolicyRule
 from transaction_loader import load_transactions
 from compliance.compliance_runner import run_compliance
 
+from typology import group_alerts_by_account
+
 async def evaluate() :
   
       # STEP 1 — load mixed sample with guaranteed laundering
@@ -32,6 +34,26 @@ async def evaluate() :
 
              # STEP 3 — run compliance INSIDE session
             alerts = await run_compliance(loaded_rules, transactions)
+
+            grouped = group_alerts_by_account(alerts)
+            typology_counts = Counter(r.typology for r in grouped.values())
+            print(f"Typology distribution: {dict(typology_counts)}")
+
+            high_confidence = {"SMURFING", "LAYERING", "STRUCTURING", "PLACEMENT"}
+            filtered_alerts = []
+
+            for result in grouped.values() :
+                if result.typology == "UNKNOWN":
+                    continue  # skip unknown
+                if result.typology == "PLACEMENT" and result.total_amount_flagged < 5000:
+                    continue  # skip low value placement
+                if result.typology == "STRUCTURING" and len(result.alerts) < 3:
+                    continue  # skip weak structuring
+
+                filtered_alerts.extend(result.alerts)
+
+            alerts = filtered_alerts
+            print(f"Alerts after typology filter: {len(alerts)}")
 
             # STEP 4 — deduplicate alerts by transaction
             # one transaction can be flagged by multiple rules
@@ -59,20 +81,28 @@ async def evaluate() :
             recall    = tp / laundering_in_sample if laundering_in_sample else 0
             f1        = 2 * (precision * recall) / (precision + recall) if (precision + recall) else 0
 
+            results = {
+            "sample_size": len(transactions),
+            "laundering_in_sample": laundering_in_sample,
+            "total_alerts": len(alerts),
+            "true_positives": tp,
+            "false_positives": fp,
+            "precision": round(precision, 3),
+            "recall": round(recall, 3),
+            "f1_score": round(f1, 3),
+            "false_positives_by_rule": dict(Counter(fp_rule_names).most_common())
+            }
+
+            # print when run directly
             print("=" * 50)
             print("COMPLIANCE AGENT EVALUATION REPORT")
             print("=" * 50)
-            print(f"Total alerts fired:  {len(alerts)}")
-            print(f"True positives:      {tp}")
-            print(f"False positives:     {fp}")
-            print(f"Precision:           {precision:.3f}")
-            print(f"Recall:              {recall:.3f}")
-            print(f"F1 Score:            {f1:.3f}")
+            for key, value in results.items():
+                print(f"{key}: {value}")
             print("=" * 50)
-            print("False positives by rule:")
-            for rule_name, count in Counter(fp_rule_names).most_common():
-                print(f"  {rule_name}: {count} false positives")
-            print("=" * 50)
+            
+            return results
+             
 
 if __name__ == "__main__":
     asyncio.run(evaluate())
