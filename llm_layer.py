@@ -10,6 +10,11 @@ You will be given details about a suspicious account flagged by our detection sy
 Your job is to analyze the account and return ONLY a valid JSON object — no explanation, 
 no markdown, no code blocks. Just raw JSON.
 
+Instructions for your analysis:
+- Use the provided data about the account, including typology, rules fired, total amount flagged, and number of suspicious transactions.
+- Assess the risk level of the account based on the evidence.
+- Use the anomaly score as supporting context, not as sole proof of laundering.
+
 Return exactly this structure:
 {
     "typology": "one of: STRUCTURING / SMURFING / LAYERING / PLACEMENT / UNKNOWN",
@@ -40,8 +45,13 @@ Detected Typology: {result.typology}
 Rules Fired: {', '.join(result.rule_names_fired)}
 Total Amount Flagged: ${result.total_amount_flagged:,.2f}
 Number of Suspicious Transactions: {len(result.alerts)}
+ML Anomaly Score: {result.ml_anomaly_score if result.ml_anomaly_score is not None else "N/A"}
+ML Priority: {result.ml_priority or "N/A"}
+ML Signals: {", ".join(result.ml_reason_signals) if result.ml_reason_signals else "None"}
 
 Analyze this account and return your JSON assessment.
+
+
 """
 
     # BUILD MESSAGES

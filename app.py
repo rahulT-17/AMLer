@@ -16,6 +16,8 @@ from llm_layer import analyze_with_llm
 from collections import Counter
 from evaluate import evaluate as run_evaluate
 
+from ml_layer import enrich_grouped_with_ml
+
 app = FastAPI(title="AML Compliance Agent")
 
 @app.post("/analyze")
@@ -40,6 +42,8 @@ async def analyze(sample: int = 1000):
     # STEP 4 — group by account + typology
     grouped = group_alerts_by_account(alerts)
 
+    grouped = enrich_grouped_with_ml(grouped)
+
     # STEP 5 — LLM analysis on high priority only
     high_priority = []
     for account, result in grouped.items():
@@ -55,7 +59,10 @@ async def analyze(sample: int = 1000):
                 "rules_fired": result.rule_names_fired,
                 "total_flagged": result.total_amount_flagged,
                 "reasoning": result.llm_analysis,
-                "recommendation": result.recommendation
+                "recommendation": result.recommendation,
+                "ml_anomaly_score": result.ml_anomaly_score,
+                "ml_priority": result.ml_priority,
+                "ml_reason_signals": result.ml_reason_signals
             })
 
     # STEP 6 — build all accounts list
@@ -65,7 +72,10 @@ async def analyze(sample: int = 1000):
             "typology": r.typology,
             "rules_fired": r.rule_names_fired,
             "total_flagged": r.total_amount_flagged,
-            "alert_count": len(r.alerts)
+            "alert_count": len(r.alerts),
+            "ml_anomaly_score": r.ml_anomaly_score,
+            "ml_priority": r.ml_priority,
+            "ml_reason_signals": r.ml_reason_signals,
         }
         for r in grouped.values()
     ]

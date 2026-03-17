@@ -15,3 +15,7 @@ class TransactionResult :
     risk_level: Optional[str] = None
     llm_analysis: Optional[str] = None
     recommendation: Optional[str] = None
+
+    ml_anomaly_score: Optional[float] = None
+    ml_priority : Optional[str] = None
+    ml_reason_signals: List[str] = field(default_factory= list) 
