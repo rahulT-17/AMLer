@@ -3,12 +3,18 @@ __pycache__/
 *.pyc
 
 # Virtual environment and env files
+.vscode/
 .venv/
 .env
+.env.*
+!.env.example
 
 # Notebook/runtime artifacts
 .ipynb_checkpoints/
 
 # Large / local data artifacts
-data/HISmallTrans.csv
 *.db
+
+# Optional project folders to exclude from commits
+documentation/
+test/

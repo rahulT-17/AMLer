@@ -1,0 +1,10 @@
+asyncpg
+fastapi
+httpx
+pandas
+pypdf
+requests
+scikit-learn
+SQLAlchemy
+streamlit
+uvicorn
