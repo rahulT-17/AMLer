@@ -98,6 +98,17 @@ def look_like_heading(line: str) -> bool:
     capitalized_words = sum(1 for word in words if word[:1].isupper())
     return capitalized_words >= max(1, len(words) - 1) 
 
+
+def split_sentence_like_parts(line: str) -> list[str]:
+    """Split a line into sentence-like parts.
+
+    This catches the common case where one PDF line actually contains multiple
+    policy rules, such as a threshold sentence followed by a format sentence.
+    """
+    parts = re.split(r"(?<=[.;:])\s+", line)
+    return [part.strip() for part in parts if part.strip()]
+
+
 def split_text_into_clauses(page_text: str) -> list[tuple[str, str | None]]:
     """Split one normalized page into clause-sized chunks.
 
@@ -121,16 +132,21 @@ def split_text_into_clauses(page_text: str) -> list[tuple[str, str | None]]:
             current_section_heading = line
             continue
 
-        # Keep short lines as single clauses.
+        # Split obvious multi-sentence lines even when the overall line is short.
+        sentence_parts = split_sentence_like_parts(line)
+        if len(sentence_parts) >= 2:
+            for part in sentence_parts:
+                clauses.append((part, current_section_heading))
+            continue
+
+        # Keep short single-sentence lines as one clause.
         if len(line) <= 130:
             clauses.append((line, current_section_heading))
             continue
 
         # Long lines are often paragraph-like, so break them into smaller
         # sentence-style pieces before wrapping them as clauses.
-        parts = re.split(r"(?<=[.;:])\s+", line)
-
-        for part in parts:
+        for part in sentence_parts:
             part = part.strip()
             if not part:
                 continue
