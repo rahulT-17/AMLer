@@ -8,6 +8,7 @@ def group_alerts_by_account(alerts) -> dict[str, TransactionResult] :
 
    # PART 1 — build groups
     account_groups = {}
+    
     for alert in alerts:
         transaction = alert.get('transaction')
 

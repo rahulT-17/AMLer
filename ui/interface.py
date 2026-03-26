@@ -12,6 +12,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
+from pyvis.network import Network
 
 from policy_extraction import extract_rules_from_clauses
 from policy_ingestion_service import build_policy_clauses, extract_pdf_pages
@@ -36,6 +38,8 @@ def init_state():
         "analysis_data": None,
         "evaluation_data": None,
         "policy_data": None,
+        "llm_account_summaries": {},
+        "account_graphs": {},
         "selected_account": None,
         "sample_size": DEFAULT_SAMPLE_SIZE,
     }
@@ -554,6 +558,14 @@ def get_high_priority_map(analysis_data):
     return {item.get("account"): item for item in items}
 
 
+def get_llm_account_summary_map():
+    return st.session_state.get("llm_account_summaries", {})
+
+
+def get_account_graph_map():
+    return st.session_state.get("account_graphs", {})
+
+
 def run_analysis_request(sample_size):
     response = requests.post(
         f"{API}/analyze",
@@ -568,6 +580,128 @@ def run_evaluation_request():
     response = requests.get(f"{API}/evaluate", timeout=240)
     response.raise_for_status()
     return response.json()
+
+
+def run_account_analysis_request(selected_account):
+    # We send the already-ranked account summary back to the API so the detail
+    # page can request an explanation on demand without rerunning the whole
+    # analysis pipeline.
+    payload = {
+        "account": selected_account.get("account"),
+        "typology": selected_account.get("typology"),
+        "rules_fired": selected_account.get("rules_fired", []),
+        "total_flagged": float(selected_account.get("total_flagged", 0) or 0),
+        "alert_count": int(selected_account.get("alert_count", 0) or 0),
+        "ml_anomaly_score": selected_account.get("ml_anomaly_score"),
+        "ml_priority": selected_account.get("ml_priority"),
+        "ml_reason_signals": selected_account.get("ml_reason_signals", []),
+    }
+
+    response = requests.post(
+        f"{API}/account-analysis",
+        json=payload,
+        timeout=240,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def run_account_graph_request(account_id, sample_size):
+    response = requests.post(
+        f"{API}/account-graph",
+        json={
+            "account": account_id,
+            "sample": int(sample_size),
+        },
+        timeout=240,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def render_account_graph(graph_data):
+    focus_account = graph_data.get("account")
+    net = Network(
+        height="420px",
+        width="100%",
+        directed=True,
+        bgcolor="#fbfbfc",
+        font_color="#161616",
+    )
+
+    for node in graph_data.get("nodes", []):
+        is_focus = node["id"] == focus_account
+        net.add_node(
+            node["id"],
+            label=node["label"],
+            title=node.get("title", ""),
+            color=node.get("color", "#E24B4A" if is_focus else "#CBD5E1"),
+            size=node.get("size", 28 if is_focus else 18),
+            borderWidth=3 if is_focus else 1.5,
+            shape="dot",
+        )
+
+    for edge in graph_data.get("edges", []):
+        edge_value = edge.get("value", 1)
+        scaled_width = min(max(edge_value / 5000, 1.25), 8)
+
+        net.add_edge(
+            edge["from"],
+            edge["to"],
+            label="",
+            title=edge.get("title", ""),
+            value=edge_value,
+            width=scaled_width,
+            color="#A7B1BF",
+            arrows="to",
+            font={"size": 9, "color": "#5B6574", "background": "#fbfbfc"},
+        )
+
+    net.set_options(
+        """
+        var options = {
+          "nodes": {
+            "font": {
+              "face": "Georgia",
+              "size": 13,
+              "color": "#161616"
+            },
+            "shadow": {
+              "enabled": true,
+              "color": "rgba(15, 23, 42, 0.08)",
+              "size": 12,
+              "x": 0,
+              "y": 4
+            }
+          },
+          "edges": {
+            "smooth": {
+              "enabled": true,
+              "type": "cubicBezier",
+              "roundness": 0.18
+            },
+            "shadow": {
+              "enabled": false
+            }
+          },
+          "interaction": {
+            "hover": true,
+            "tooltipDelay": 120,
+            "navigationButtons": false
+          },
+          "physics": {
+            "barnesHut": {
+              "gravitationalConstant": -2800,
+              "springLength": 145,
+              "springConstant": 0.05,
+              "damping": 0.14
+            },
+            "minVelocity": 0.75
+          }
+        }
+        """
+    )
+    return net.generate_html()
 
 
 def build_policy_summary(clauses, rules):
@@ -741,6 +875,10 @@ def render_run_analysis():
                 else:
                     st.session_state["analysis_data"] = analysis
                     st.session_state["evaluation_data"] = None
+                    # Keep any precomputed top-account LLM summaries available in
+                    # session state so the detail view can reuse them instantly.
+                    st.session_state["llm_account_summaries"] = get_high_priority_map(analysis)
+                    st.session_state["account_graphs"] = {}
                     sorted_accounts = sort_accounts(analysis.get("all_accounts", []))
                     st.session_state["selected_account"] = (
                         sorted_accounts[0]["account"] if sorted_accounts else None
@@ -858,7 +996,7 @@ def render_account_detail():
         )
         return
 
-    llm_map = get_high_priority_map(analysis)
+    llm_map = get_llm_account_summary_map()
     llm_details = llm_map.get(selected.get("account"))
 
     header_cols = st.columns([0.15, 0.85], gap="small")
@@ -922,29 +1060,65 @@ def render_account_detail():
 
     with content_cols[1]:
         with st.container(border=True):
-            st.markdown("**Money trail (graph placeholder)**")
-            st.markdown(
-                f"""
-                <div style="display:flex;flex-direction:column;align-items:center;gap:0.8rem;padding-top:0.4rem;">
-                  <div style="width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#FCEBEB;color:#A32D2D;border:1.5px solid #E24B4A;font-size:0.66rem;font-weight:700;text-align:center;" class="mono">{selected.get('account', 'N/A')[:8]}</div>
-                  <div style="display:flex;gap:1.2rem;">
-                    <div style="display:flex;flex-direction:column;align-items:center;gap:0.35rem;">
-                      <div style="width:1px;height:16px;background:#d8dce3;"></div>
-                      <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#f3f4f6;border:1px solid #e5e7eb;font-size:0.58rem;">ML</div>
+            st.markdown("**Money trail**")
+
+            graph_cache = get_account_graph_map()
+            graph_data = graph_cache.get(selected.get("account"))
+
+            if graph_data:
+                graph_stats = st.columns(3, gap="small")
+                graph_stats[0].markdown(
+                    metric_card("Focus account", selected.get("account", "N/A")),
+                    unsafe_allow_html=True,
+                )
+                graph_stats[1].markdown(
+                    metric_card("Nodes", f"{len(graph_data.get('nodes', [])):,}", "#378ADD"),
+                    unsafe_allow_html=True,
+                )
+                graph_stats[2].markdown(
+                    metric_card("Paths", f"{len(graph_data.get('edges', [])):,}", "#854F0B"),
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    "<div class='subtle-note' style='margin:0.15rem 0 0.45rem;'>Nodes represent accounts. Edges represent aggregated suspicious transfer paths between accounts in the current analysis sample.</div>",
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    """
+                    <div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin:0.4rem 0 0.65rem;">
+                      <div style="display:flex;align-items:center;gap:0.35rem;"><span class="dot dot-critical"></span><span class="subtle-note">Selected account</span></div>
+                      <div style="display:flex;align-items:center;gap:0.35rem;"><span class="dot dot-medium"></span><span class="subtle-note">Counterparty accounts</span></div>
+                      <div style="display:flex;align-items:center;gap:0.35rem;"><span class="dot dot-low"></span><span class="subtle-note">Edge width reflects total suspicious amount</span></div>
                     </div>
-                    <div style="display:flex;flex-direction:column;align-items:center;gap:0.35rem;">
-                      <div style="width:1px;height:16px;background:#d8dce3;"></div>
-                      <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#f3f4f6;border:1px solid #e5e7eb;font-size:0.58rem;">RULES</div>
-                    </div>
-                    <div style="display:flex;flex-direction:column;align-items:center;gap:0.35rem;">
-                      <div style="width:1px;height:16px;background:#d8dce3;"></div>
-                      <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#f3f4f6;border:1px solid #e5e7eb;font-size:0.58rem;">LLM</div>
-                    </div>
-                  </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                    """,
+                    unsafe_allow_html=True,
+                )
+                graph_html = render_account_graph(graph_data)
+                components.html(graph_html, height=500, scrolling=False)
+            else:
+                st.markdown(
+                    "<div class='empty-state'>No graph has been generated for this account yet.</div>",
+                    unsafe_allow_html=True,
+                )
+
+                if st.button(
+                    "Generate Money Trail",
+                    key=f"generate_graph_{selected.get('account')}",
+                    type="primary",
+                ):
+                    with st.spinner("Building account graph..."):
+                        try:
+                            graph_response = run_account_graph_request(
+                                selected.get("account"),
+                                st.session_state.get("sample_size", DEFAULT_SAMPLE_SIZE),
+                            )
+                        except requests.RequestException as exc:
+                            st.error(f"Account graph request failed: {exc}")
+                        else:
+                            graph_cache[selected.get("account")] = graph_response
+                            st.session_state["account_graphs"] = graph_cache
+                            st.rerun()
+
             st.markdown(
                 f"""
                 <div style="margin-top:0.8rem;">
@@ -961,7 +1135,7 @@ def render_account_detail():
                     st.markdown(f"- {signal}")
             else:
                 st.markdown("<div class='subtle-note'>No ML reason signals available.</div>", unsafe_allow_html=True)
-            st.caption("Interactive transaction graph is planned next. This panel is intentionally acting as the mockup graph placeholder.")
+            st.caption("Money trail edges are built from suspicious transactions associated with the selected account in the current analysis sample.")
 
     with st.container(border=True):
         st.markdown("**LLM Analysis - Mistral 7B**")
@@ -978,9 +1152,20 @@ def render_account_detail():
             )
         else:
             st.markdown(
-                "<div class='empty-state'>No LLM summary was generated for this account. Only the top-ranked cases are currently explained.</div>",
+                "<div class='empty-state'>No AI case summary has been generated for this account yet.</div>",
                 unsafe_allow_html=True,
             )
+            if st.button("Generate AI Case Summary", key=f"generate_llm_{selected.get('account')}", type="primary"):
+                with st.spinner("Generating account summary..."):
+                    try:
+                        llm_response = run_account_analysis_request(selected)
+                    except requests.RequestException as exc:
+                        st.error(f"Account analysis request failed: {exc}")
+                    else:
+                        llm_cache = get_llm_account_summary_map()
+                        llm_cache[selected.get("account")] = llm_response
+                        st.session_state["llm_account_summaries"] = llm_cache
+                        st.rerun()
 
 
 def render_evaluation():

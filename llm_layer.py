@@ -2,7 +2,10 @@
 
 import httpx
 import json
+from typing import Any
+
 from models.transaction_result import TransactionResult
+from settings import settings
 
 SYSTEM_PROMPT = """You are a senior AML compliance analyst at a financial intelligence unit.
 You will be given details about a suspicious account flagged by our detection system.
@@ -30,24 +33,46 @@ Risk level guidelines:
 - LOW: minimal evidence, likely false positive"""
 
 
-async def analyze_with_llm(result: TransactionResult) -> dict:
+async def analyze_with_llm(result: TransactionResult | dict[str, Any]) -> dict:
     """
-    Send a TransactionResult to LM Studio and get back
-    structured AML analysis.
+    Send either a grouped TransactionResult or a compact account-summary
+    payload to LM Studio and get back structured AML analysis.
     """
+
+    # The LLM layer now supports both:
+    # 1. the original grouped TransactionResult objects from the batch flow
+    # 2. the lighter account-summary payload used by the on-demand detail view
+    if isinstance(result, dict):
+        account = result.get("account", "UNKNOWN")
+        typology = result.get("typology", "UNKNOWN")
+        rules_fired = result.get("rules_fired") or result.get("rule_names_fired") or []
+        total_flagged = float(result.get("total_flagged", result.get("total_amount_flagged", 0.0)) or 0.0)
+        alert_count = int(result.get("alert_count", 0) or 0)
+        ml_anomaly_score = result.get("ml_anomaly_score")
+        ml_priority = result.get("ml_priority")
+        ml_reason_signals = result.get("ml_reason_signals") or []
+    else:
+        account = result.account
+        typology = result.typology
+        rules_fired = result.rule_names_fired
+        total_flagged = result.total_amount_flagged
+        alert_count = len(result.alerts)
+        ml_anomaly_score = result.ml_anomaly_score
+        ml_priority = result.ml_priority
+        ml_reason_signals = result.ml_reason_signals
 
     # BUILD USER PROMPT from TransactionResult data
     user_prompt = f"""
 Suspicious Account Analysis Request:
 
-Account ID: {result.account}
-Detected Typology: {result.typology}
-Rules Fired: {', '.join(result.rule_names_fired)}
-Total Amount Flagged: ${result.total_amount_flagged:,.2f}
-Number of Suspicious Transactions: {len(result.alerts)}
-ML Anomaly Score: {result.ml_anomaly_score if result.ml_anomaly_score is not None else "N/A"}
-ML Priority: {result.ml_priority or "N/A"}
-ML Signals: {", ".join(result.ml_reason_signals) if result.ml_reason_signals else "None"}
+Account ID: {account}
+Detected Typology: {typology}
+Rules Fired: {', '.join(rules_fired)}
+Total Amount Flagged: ${total_flagged:,.2f}
+Number of Suspicious Transactions: {alert_count}
+ML Anomaly Score: {ml_anomaly_score if ml_anomaly_score is not None else "N/A"}
+ML Priority: {ml_priority or "N/A"}
+ML Signals: {", ".join(ml_reason_signals) if ml_reason_signals else "None"}
 
 Analyze this account and return your JSON assessment.
 
@@ -64,11 +89,11 @@ Analyze this account and return your JSON assessment.
 
     # CALL LM STUDIO
     try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        async with httpx.AsyncClient(timeout=settings.llm_timeout_seconds) as client:
             response = await client.post(
-                "http://localhost:1234/v1/chat/completions",
+                settings.llm_base_url,
                 json={
-                    "model": "mistralai/mistral-7b-instruct-v0.3",
+                    "model": settings.llm_model,
                     "messages": messages,
                     "max_tokens": 150,
                     "temperature": 0.1  # low temperature = consistent output
@@ -79,18 +104,23 @@ Analyze this account and return your JSON assessment.
         data = response.json()
         raw_text = data["choices"][0]["message"]["content"]
 
-        # clean and parse JSON
+        # Extract the JSON body even if the model adds fences or extra text.
         clean = raw_text.strip()
         if clean.startswith("```"):
-            clean = clean.split("```")[1]
-            if clean.startswith("json"):
-                clean = clean[4:]
+            clean = clean.replace("```json", "").replace("```", "").strip()
+
+        start = clean.find("{")
+        end = clean.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            clean = clean[start:end + 1]
 
         return json.loads(clean)
 
     except json.JSONDecodeError:
+        print("Raw LLM response that failed JSON parsing:")
+        print(raw_text)
         return {
-            "typology": result.typology,
+            "typology": typology,
             "risk_level": "UNKNOWN",
             "reasoning": "LLM returned unparseable response",
             "recommendation": "MANUAL_REVIEW"
@@ -98,7 +128,7 @@ Analyze this account and return your JSON assessment.
     except Exception as e:
         print(f"Full error: {type(e).__name__}: {e}")
         return {
-            "typology": result.typology,
+            "typology": typology,
             "risk_level": "UNKNOWN",
             "reasoning": f"LLM call failed: {str(e)}",
             "recommendation": "MANUAL_REVIEW"
