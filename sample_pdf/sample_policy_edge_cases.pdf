@@ -1,0 +1,68 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Length 780 >>
+stream
+BT
+/F1 12 Tf
+72 760 Td
+14 TL
+(AML POLICY EDGE CASES) Tj
+T*
+() Tj
+T*
+(Reporting Thresholds) Tj
+T*
+(Transfers over $5,000 require review.) Tj
+T*
+(Transfers at least $7,500 must be flagged.) Tj
+T*
+(Transactions above $10,500.75 must be escalated.) Tj
+T*
+(Transactions just below reporting thresholds should be monitored.) Tj
+T*
+() Tj
+T*
+(ACH Monitoring) Tj
+T*
+(ACH transfers to multiple recipients within 24 hours require enhanced review.) Tj
+T*
+(ACH payment descriptions must match the expected ACH format.) Tj
+T*
+(Non-standard ACH payment descriptions should be flagged for manual investigation.) Tj
+T*
+() Tj
+T*
+(Operational Review) Tj
+T*
+(Review must occur within 24 hours) Tj
+T*
+(Transactions above $10,000 must be flagged. ACH descriptions must match the expected format.) Tj
+ET
+endstream
+endobj
+3 0 obj
+<< /Type /Page /Parent 4 0 R /MediaBox [0 0 612 792] /Contents 2 0 R /Resources << /Font << /F1 1 0 R >> >> >>
+endobj
+4 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+5 0 obj
+<< /Type /Catalog /Pages 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000085 00000 n 
+0000000916 00000 n 
+0000001042 00000 n 
+0000001099 00000 n 
+trailer
+<< /Size 6 /Root 5 0 R >>
+startxref
+1148
+%%EOF
