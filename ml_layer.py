@@ -5,19 +5,20 @@ from datetime import datetime, timedelta
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 
-
+# safe float : if value is not a valid float,
+# return 0.0 instead of raising an error
 def _safe_float(value, default=0.0):
     try:
         return float(value)
     except (ValueError, TypeError):
         return default
 
-
+# parse timestamp with error handling, return None if invalid or missing
 def _parse_timestamp(value):
     if not value :
         return None
     try:
-        return datetime.strptime(value, "%Y-%m-%d %H:%M")
+        return datetime.strptime(value, "%Y/%m/%d %H:%M")
     except ValueError:
         return None
 
@@ -97,18 +98,19 @@ def score_accounts_with_isolation_forest(feature_df, contamination=0.15, random_
     return score_series.to_dict()
 
 
+"""helper function: for deriving human readable signals from the ML features and rules, to be included in the LLM prompt
+ these signals are not meant to be perfect or cover all cases, but rather to provide some context to the LLM about why the ML model flagged this account as anomalous,
+and what specific patterns it detected in the transactions. 
+The LLM can then use these signals to generate a more informed analysis and recommendation."""
+
 def derive_ml_reason_signals(result):
     signals = []
-
     txns = result.transactions
-
-    if len(txns) >= 5:
-        signals.append("many suspicious transaction count")
-
+    
     near_threshold_count = 0
     ach_count = 0
     counterparties = set()
-
+    
     for txn in txns:
         amount = _safe_float(txn.get("amount_paid"))
         if 8000 <= amount <= 9999:
@@ -116,21 +118,48 @@ def derive_ml_reason_signals(result):
 
         if txn.get("payment_format") == "ACH":
             ach_count += 1
-        counterparty = txn.get("account.1")
+
         if txn.get("account.1"):
             counterparties.add(txn.get("account.1"))
 
+    if len(txns) >= 5:
+        signals.append("many suspicious transaction count")
+
+    elif len(txns) >= 3:
+        signals.append("multiple suspicious transactions")
+
     if near_threshold_count >= 3:
         signals.append("multiple transactions just under reporting threshold")
+    elif near_threshold_count > 2:
+        signals.append("some transactions just under reporting threshold")
+    elif near_threshold_count > 1:
+        signals.append("at least one transaction just under reporting threshold")
 
     if ach_count >= 3:
         signals.append("Heavy ACH transactions")
+    elif ach_count > 1:
+        signals.append("Some ACH transactions")
 
     if len(counterparties) >= 5:
         signals.append("many distinct counterparties")
+    elif len(counterparties) >= 2:
+        signals.append("multiple distinct counterparties")
+    
+    if result.total_amount_flagged >= 10_000_000:
+        signals.append("very large total flagged exposure")
+    elif result.total_amount_flagged >= 1_000_000:
+        signals.append("large total flagged exposure")
+
+    if result.ml_anomaly_score is not None:
+        if result.ml_anomaly_score >= 0.95:
+            signals.append("ranked as an extreme behavioral outlier")
+        elif result.ml_anomaly_score >= 0.85:
+            signals.append("ranked highly anomalous by account behavior")
+
     
     if "cycle_detection" in result.rule_names_fired:
         signals.append("possible cycle detected")
+    
 
     return signals
 
@@ -151,8 +180,11 @@ def enrich_grouped_with_ml(grouped, contamination=0.15):
 
         score = scores.get(account, 0.0)
         result.ml_anomaly_score = score
-
-        if score > 0.75 :
+        
+        if score > 0.85 :
+            result.ml_priority = "CRITICAL"
+            
+        elif score > 0.75 :
             result.ml_priority = "HIGH"
 
         elif score > 0.45 :

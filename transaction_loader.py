@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-def load_transactions(sample=5000):
+def load_transactions(sample=10000):
     df = pd.read_csv("data/HISmallTrans.csv")
     df.columns = [col.lower().replace(" ", "_") for col in df.columns]
 
