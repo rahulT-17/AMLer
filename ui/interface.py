@@ -113,11 +113,34 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
 }
 
 .sidebar-brand {
-  font-size: 0.72rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.18rem;
+  margin-bottom: 1rem;
+  padding: 0.15rem 0.1rem 0.25rem;
+}
+
+.sidebar-brand-kicker {
+  font-size: 0.64rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--text-secondary);
-  margin-bottom: 0.85rem;
+}
+
+.sidebar-brand-title {
+  font-size: 1.18rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  color: var(--text-main);
+}
+
+.sidebar-brand-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
 }
 
 .nav-divider {
@@ -751,7 +774,16 @@ def set_selected_account(account_id):
 
 
 def render_sidebar():
-    st.sidebar.markdown("<div class='sidebar-brand'>AML AGENT</div>", unsafe_allow_html=True)
+    st.sidebar.markdown(
+        """
+        <div class='sidebar-brand'>
+          <div class='sidebar-brand-kicker'>Compliance Intelligence</div>
+          <div class='sidebar-brand-title'>AMLer</div>
+          <div class='sidebar-brand-subtitle'>Transaction monitoring workspace</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     for page in PAGES:
         button_type = "primary" if st.session_state.get("page") == page else "secondary"
