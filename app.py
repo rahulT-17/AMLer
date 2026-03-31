@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from typing import Any
 from compliance.compliance_runner import run_compliance
-from db import AsyncSessionLocal
+from core.db import AsyncSessionLocal
 from evaluate import evaluate
 from evaluate import evaluate as run_evaluate
 from llm_layer import analyze_with_llm

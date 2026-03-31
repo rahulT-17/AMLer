@@ -21,7 +21,7 @@ from models.policy_ingestion import (
     PolicyClause,
     PolicyRuleLifecycle,
 )
-from settings import settings
+from core.config import settings
 
 ALLOWED_RULE_TYPES = {"THRESHOLD", "FORMAT", "FREQUENCY", "CHAIN"}
 ALLOWED_SEVERITIES = {"LOW", "MEDIUM", "HIGH"}

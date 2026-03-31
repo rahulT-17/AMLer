@@ -1,7 +1,7 @@
 # Initilizing db and creating tables
 
 import asyncio
-from db import engine , Base
+from core.db import engine , Base
 import policy_rules_model # imp so models can be registred
 
 async def init_models():

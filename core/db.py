@@ -1,19 +1,17 @@
-﻿import os 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:your_password@localhost:5432/aml_compliance")
+from core.config import settings
 
 # creating a connection pool to PostgreSQL :
 engine = create_async_engine(
-    DATABASE_URL,
-    echo=True,  # shows sql queries in terminal 
+    settings.database_url,
+    echo=settings.sql_echo,
 )
 
-# Creating session factory : 
+# Creating session factory :
 AsyncSessionLocal = async_sessionmaker(
     engine,
-    expire_on_commit=False 
+    expire_on_commit=False
 )
 
 Base = declarative_base()

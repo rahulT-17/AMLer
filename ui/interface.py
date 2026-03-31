@@ -17,7 +17,7 @@ from pyvis.network import Network
 
 from policy_extraction import extract_rules_from_clauses
 from policy_ingestion_service import build_policy_clauses, extract_pdf_pages
-from settings import settings
+from core.config import settings
 
 
 API = settings.api_base_url

@@ -3,7 +3,7 @@
 import asyncio
 from collections import Counter
 from sqlalchemy import select
-from db import AsyncSessionLocal
+from core.db import AsyncSessionLocal
 from policy_rules_model import PolicyRule
 from transaction_loader import load_transactions
 from compliance.compliance_runner import run_compliance

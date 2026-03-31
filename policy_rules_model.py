@@ -2,7 +2,7 @@
 
 import enum
 from sqlalchemy import  Boolean, Column, Integer, Float, ForeignKey, Text , Enum as SAEnum
-from db import Base
+from core.db import Base
 
 class PolicyRuleType(enum.Enum) :
     BIPARTITE = "BIPARTITE"

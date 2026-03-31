@@ -2,7 +2,7 @@
 # This module contains functions to seed rules into the AMLer system.
 
 import asyncio
-from db import AsyncSessionLocal 
+from core.db import AsyncSessionLocal 
 from policy_rules_model import (
     BipartiteRule, PolicyRuleType, ThresholdRule, FormatRule, FrequencyRule, ChainRule
 )

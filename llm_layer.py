@@ -5,7 +5,7 @@ import json
 from typing import Any
 
 from models.transaction_result import TransactionResult
-from settings import settings
+from core.config import settings
 
 SYSTEM_PROMPT = """You are a senior AML compliance analyst at a financial intelligence unit.
 You will be given details about a suspicious account flagged by our detection system.

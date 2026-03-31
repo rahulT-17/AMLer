@@ -3,7 +3,7 @@
 import asyncio
 from sqlalchemy import select
 from llm_layer import analyze_with_llm
-from db import AsyncSessionLocal
+from core.db import AsyncSessionLocal
 from policy_rules_model import PolicyRule, ThresholdRule, FormatRule, FrequencyRule, ChainRule
 from transaction_loader import load_transactions
 from compliance.compliance_runner import run_compliance
