@@ -6,7 +6,7 @@ This project was built as a portfolio piece around a simple idea: AML tools shou
 
 ![AMLer Architecture](demo/architecture.png)
 
-_Here is the architectural flow of AMLer._
+_Here is the interactive architectural flow of AMLer._
 
 ## Current Evaluation Snapshot
 
@@ -204,6 +204,7 @@ AMLer/
   compliance/             # Compliance runner and evaluator integration
   core/                   # Shared config and DB setup
   data/                   # Transaction data
+  demo/                   # Product Demo
   evaluators/             # Rule family evaluators
   models/                 # Supporting dataclasses / ingestion models
   policy_extraction/      # LLM-first candidate rule extraction + heuristic fallback
@@ -392,4 +393,4 @@ If you are reviewing this project as a portfolio piece, the key technical story 
 
 AMLer is a multi-stage AML investigation system built to be explainable, interactive, and honest about tradeoffs. The project intentionally separates detection, prioritization, explanation, and policy interpretation so that each layer stays understandable and useful.
 
-That design choice is the core of the project.
+That design choice is the core of my project.
