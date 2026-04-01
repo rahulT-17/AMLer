@@ -1,13 +1,19 @@
 # # evaluate.py — measures accuracy of the compliance agent against ground truth
 
+# import libraries:
 import asyncio
 from collections import Counter
 from sqlalchemy import select
+
+# database and models:
 from core.db import AsyncSessionLocal
 from policy_rules_model import PolicyRule
+
+# transaction loader and compliance runner:
 from transaction_loader import load_transactions
 from compliance.compliance_runner import run_compliance
 
+# ML layer and typology imports for evaluation:
 from ml_layer import build_account_feature_frame , score_accounts_with_isolation_forest
 from typology import group_alerts_by_account
 
@@ -15,7 +21,7 @@ async def evaluate() :
   
       # STEP 1 — load mixed sample with guaranteed laundering
 
-      transactions = load_transactions(sample=10000)
+      transactions = load_transactions(sample=1000)
       laundering_in_sample = sum(1 for t in transactions if t['is_laundering'] == 1)
       print(f"sample size: {len(transactions)}")
       print(f"laundering in sample: {laundering_in_sample}")

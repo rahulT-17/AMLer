@@ -21,6 +21,7 @@ from models.policy_ingestion import (
     PolicyClause,
     PolicyRuleLifecycle,
 )
+
 from core.config import settings
 
 ALLOWED_RULE_TYPES = {"THRESHOLD", "FORMAT", "FREQUENCY", "CHAIN"}

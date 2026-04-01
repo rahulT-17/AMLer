@@ -2,12 +2,15 @@
 
 import asyncio
 from sqlalchemy import select
-from llm_layer import analyze_with_llm
-from core.db import AsyncSessionLocal
-from policy_rules_model import PolicyRule, ThresholdRule, FormatRule, FrequencyRule, ChainRule
+from collections import Counter
+
 from transaction_loader import load_transactions
 from compliance.compliance_runner import run_compliance
-from collections import Counter
+
+from policy_rules_model import PolicyRule
+from core.db import AsyncSessionLocal
+
+from llm_layer import analyze_with_llm
 from typology import group_alerts_by_account
 
 
@@ -72,5 +75,6 @@ async def main():
             print(f"Reasoning: {result.llm_analysis}")
             print(f"Recommendation: {result.recommendation}")
             print("-" * 50)
+
 if __name__ == "__main__":
     asyncio.run(main())

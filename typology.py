@@ -1,4 +1,6 @@
 # typology : this file defines the typology classification logic based on the rules that were triggered for a transaction
+
+
 from datetime import datetime, timedelta   
 from models.transaction_result import TransactionResult
 

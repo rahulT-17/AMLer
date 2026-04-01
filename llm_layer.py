@@ -1,11 +1,14 @@
 # llm_layer.py — LLM reasoning layer for AML compliance agent
 
+# import libraries and dependencies:
 import httpx
 import json
 from typing import Any
 
-from models.transaction_result import TransactionResult
 from core.config import settings
+
+from models.transaction_result import TransactionResult
+
 
 SYSTEM_PROMPT = """You are a senior AML compliance analyst at a financial intelligence unit.
 You will be given details about a suspicious account flagged by our detection system.

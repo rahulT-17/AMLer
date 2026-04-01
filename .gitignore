@@ -15,7 +15,11 @@ __pycache__/
 # Large / local data artifacts
 *.db
 *.bundle
+HISmallTrans.csv
 
 # Optional project folders to exclude from commits
 documentation/
 test/
+
+# Local editor workspace files
+*.code-workspace
