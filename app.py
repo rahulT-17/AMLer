@@ -1,20 +1,12 @@
-# app.py : AML Compliance Agent API
+# app.py : AMLer main app entry point
 
+# import libraries:
+from fastapi import FastAPI
 
-
-
-from fastapi import FastAPI, APIRouter
-
-from services.analysis_service import run_analysis
-
-
-from evaluate import evaluate as run_evaluate
-
+# import routers:
 from api.routes.analysis import router as analysis_router
 from api.routes.account_detail import router as account_detail_router
 from api.routes.evaluation import router as evaluation_router
-from llm_layer import analyze_with_llm
-
 
 
 app = FastAPI(title="AML Compliance Agent")

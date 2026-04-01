@@ -1,15 +1,18 @@
 # services/account_detail_services.py : 
 
+# import libraries:
 from sqlalchemy import select
-from core.db import AsyncSessionLocal
 from collections import defaultdict
 
+# import models and services:
+from core.db import AsyncSessionLocal
+from policy_rules_model import PolicyRule
+from transaction_loader import load_transactions
 from compliance.compliance_runner import run_compliance
+
+# Additional imports for typology and ML enrichment:
 from typology import group_alerts_by_account
 from ml_layer import enrich_grouped_with_ml
-from policy_rules_model import PolicyRule
-
-from transaction_loader import load_transactions
 
 
 async def load_grouped_results(sample: int):

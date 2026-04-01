@@ -1,14 +1,20 @@
 
+# import libraries:
 from sqlalchemy import select
 from collections import Counter
+
+# import models and db session:
+from policy_rules_model import PolicyRule
+from core.db import AsyncSessionLocal
+
+# Loader and services:
+from transaction_loader import load_transactions
 from compliance.compliance_runner import run_compliance
+
+# Additional imports for typology, ML enrichment, and LLM analysis:
 from typology import group_alerts_by_account    
 from ml_layer import enrich_grouped_with_ml
-from policy_rules_model import PolicyRule
 from llm_layer import analyze_with_llm
-
-from core.db import AsyncSessionLocal
-from transaction_loader import load_transactions
 
 
 async def run_analysis(sample: int = 1000, include_llm: bool = False):

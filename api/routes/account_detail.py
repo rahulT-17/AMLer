@@ -1,11 +1,13 @@
+# api/routes/account_detail.py : API routes for account detail analysis and graph generation
+
 from fastapi import  APIRouter
+from typing  import Any
 
 from api.schemas.account_detail import AccountAnalysisRequest, AccountGraphRequest
 from services.account_detail_service import load_grouped_results, build_account_graph_payload
 
-from typing  import Any
-
 from llm_layer import analyze_with_llm
+
 
 router = APIRouter()
 

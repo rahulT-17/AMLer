@@ -1,4 +1,7 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+# core/db.py : Database connection setup and session management for async SQLAlchemy with PostgreSQL
+
+
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from core.config import settings
 
@@ -8,10 +11,10 @@ engine = create_async_engine(
     echo=settings.sql_echo,
 )
 
-# Creating session factory :
+# Creating session factory : 
 AsyncSessionLocal = async_sessionmaker(
     engine,
-    expire_on_commit=False
+    expire_on_commit=False 
 )
 
 Base = declarative_base()

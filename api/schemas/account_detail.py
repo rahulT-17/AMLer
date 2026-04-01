@@ -1,8 +1,8 @@
+# api/schemas/account_detail.py : Pydantic models for account detail analysis and graph generation
 
-# core import for db access and models:
 from pydantic import BaseModel
 
-# AccountAnlysisRequest model for future use in /account-analysis endpoint
+
 class AccountAnalysisRequest(BaseModel):
     account: str
     typology: str 
