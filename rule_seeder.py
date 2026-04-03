@@ -1,7 +1,10 @@
 # Rule seeder for AMLer
 # This module contains functions to seed rules into the AMLer system.
 
+
 import asyncio
+from sqlalchemy import select
+from policy_rules_model import PolicyRule
 from core.db import AsyncSessionLocal 
 from policy_rules_model import (
     BipartiteRule, PolicyRuleType, ThresholdRule, FormatRule, FrequencyRule, ChainRule
@@ -15,8 +18,12 @@ VALID_CURRENCIES =  (
 
 async def seed_rules() :
     async with AsyncSessionLocal() as session :
+        
+        result = await session.execute(select(PolicyRule.name))
+        existing_rule_names = set(result.scalars().all())
 
         bipartite = BipartiteRule(
+            name = "bipartite",
             rule_type=PolicyRuleType.BIPARTITE,
             source_text="Unusual relationship between sender and receiver accounts",
             severity="MEDIUM",
@@ -80,9 +87,16 @@ async def seed_rules() :
             detect_cycles=True,
             amount_tolerance=0.1
         )
-        session.add_all([structuring_a, structuring_b, ach_format, frequency_rule, bipartite, chain])
+        seed_rules = [structuring_a, structuring_b, ach_format, frequency_rule, bipartite, chain]
+
+        new_rules = [rule for rule in seed_rules if rule.name not in existing_rule_names]
+
+        if not new_rules:
+            print("No new rules to seed.")
+            return
+        session.add_all(new_rules)
         await session.commit() 
-        print("Rules seeded successfully.")
+        print(f"Seeded {len(new_rules)} new rules.")
 
 if __name__ == "__main__":
     asyncio.run(seed_rules())
