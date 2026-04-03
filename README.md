@@ -1,53 +1,89 @@
 # AMLer
 
-AMLer is a hybrid Anti-Money Laundering investigation system that combines rule-based detection, typology classification, anomaly scoring, on-demand LLM case summaries, policy PDF ingestion, and graph-based money trail visualization.
+AMLer is a hybrid Anti-Money Laundering investigation system I built around a simple idea: AML tools should not just flag suspicious transactions, they should help an analyst understand why an account looks risky, what laundering pattern it resembles, and what to investigate next.
 
-This project was built as a portfolio piece around a simple idea: AML tools should not just flag transactions, they should help an analyst understand why an account is suspicious, what pattern it resembles, and what to investigate next.
+It combines:
 
-## STATUS 
-currently working on the docker
+- rule-based detection
+- account-level typology classification
+- Isolation Forest prioritization
+- on-demand LLM case summaries
+- policy PDF ingestion into draft candidate controls
+- graph-based money trail visualization
 
-![AMLer Architecture](demo/architecture.png)
+At a high level, AMLer uses rules to detect suspicious activity, typology logic to interpret it, ML to prioritize it, and LLMs to explain it.
 
-_Here is the interactive architectural flow of AMLer._
+## High-Level Architecture
 
-## Current Evaluation Snapshot
+![AMLer architecture](/C:/Users/rahul/Documents/AMLer/demo/architecture.png)
 
-Latest local evaluation run from `evaluate.py` on March 31, 2026 using `sample_size=1000`:
-
-- Precision: `0.267`
-- Recall: `0.990`
-- F1 score: `0.420`
-- True positives: `99`
-- False positives: `272`
-- Total alerts after filtering: `775`
-
-What this means:
-
-- The current system is tuned for very high recall, which is often the safer tradeoff in AML triage.
-- Precision is still modest, which reflects the rule-heavy design and the cost of catching more suspicious behavior.
-- The strongest false positives currently come from the structuring threshold rules, which gives me a clear next tuning target.
+_High-level flow of the investigation and policy-ingestion paths._
 
 
-## Product Walkthrough
+## Why I Built It
+
+Most AML demos stop at one layer:
+
+- a rules engine
+- a classifier
+- a dashboard
+- an LLM summary
+
+I wanted to build a system where each layer had a clear job:
+
+- rules for detection
+- typology for interpretation
+- ML for prioritization
+- LLM for explanation
+- policy ingestion for candidate-control generation
+
+That separation of responsibilities is the main architectural idea behind AMLer.
+
+## Dockerized Local Stack
+
+AMLer now runs locally as a Docker Compose stack with:
+
+- FastAPI backend
+- Streamlit UI
+- PostgreSQL database
+
+This made the project much easier to demo and much closer to a realistic full-stack workflow.
+
+## Screens
 
 ### Investigation Dashboard
 
-![AMLer investigation dashboard](demo/dashboard.png)
+![AMLer investigation dashboard](/C:/Users/rahul/Documents/AMLer/demo/dashboard.png)
 
-_The main screen is designed for triage first: run the pipeline, review suspicious account counts, and move into detail only when needed._
+_The dashboard is built for triage first: run the pipeline, inspect suspicious accounts, then move into detail only when needed._
 
 ### Account Detail View
 
-![AMLer account detail](demo/account-detail.png)
+![AMLer account detail](/C:/Users/rahul/Documents/AMLer/demo/account-detail.png)
 
-_The account detail view brings together rule evidence, ML signals, an on-demand LLM case summary, and a PyVis money trail graph so one case can be reviewed end to end._
+_The account detail view combines rule evidence, ML signals, an on-demand LLM case summary, and a PyVis money trail graph so one case can be reviewed end to end._
 
 ### Evaluation View
 
-![AMLer evaluation dashboard](demo/evaluation.png)
+![AMLer evaluation dashboard](/C:/Users/rahul/Documents/AMLer/demo/evaluation.png)
 
 _The evaluation page makes the current precision/recall tradeoff explicit and shows which rules are driving false positives._
+
+```mermaid
+flowchart LR
+    A["Transaction Sample"] --> B["Rule Engine"]
+    B --> C["Alert Grouping by Account"]
+    C --> D["Typology Classification"]
+    D --> E["ML Anomaly Scoring"]
+    E --> F["Streamlit Investigation UI"]
+    F --> G["On-Demand LLM Case Summary"]
+    F --> H["On-Demand Money Trail Graph"]
+
+    I["Policy PDF"] --> J["Clause Extraction"]
+    J --> K["LLM-First Rule Extraction"]
+    K --> L["Heuristic Fallback"]
+    L --> M["Draft Candidate Controls in UI"]
+```
 
 ## What AMLer Does
 
@@ -69,46 +105,30 @@ AMLer supports two connected workflows:
 - fall back to heuristic extractors when needed
 - show candidate controls in the UI with source traceability
 
-## Why I Built It This Way
+## Current Evaluation Snapshot
 
-Most AML demos stop at one of these layers:
-- a rules engine
-- a classifier
-- a dashboard
-- an LLM summary
+Latest local evaluation run from `evaluate.py` on March 31, 2026 using `sample_size=1000`:
 
-AMLer intentionally combines serveral layers that are often shown separately:
+- Precision: `0.267`
+- Recall: `0.990`
+- F1 score: `0.420`
+- True positives: `99`
+- False positives: `272`
+- Total alerts after filtering: `775`
 
-- Rules are used for detection because they are interpretable and strong for recall.
-- Typology logic is used to convert low-level alerts into higher-level laundering patterns.
-- ML is used for prioritization, not as the primary source of truth.
-- The LLM is used for explanation and policy interpretation, not as the decision-maker.
-- Graph visualization is used in the detail view, where network structure is actually useful.
+How I read these numbers:
 
-That separation of responsibilities is the main architectural idea behind the project.
+- the system is currently tuned for very high recall
+- precision is still modest because the rule-heavy setup catches a lot, but also over-flags
+- the biggest tuning opportunity right now is around the structuring threshold rules
 
-## System Architecture
+This tradeoff is intentional for the current stage of the project. I would rather catch more suspicious behavior first, then tighten false positives, than miss risky patterns early.
 
-```mermaid
-flowchart LR
-    A["Transaction Sample"] --> B["Rule Engine"]
-    B --> C["Alert Grouping by Account"]
-    C --> D["Typology Classification"]
-    D --> E["ML Anomaly Scoring"]
-    E --> F["Streamlit Investigation UI"]
-    F --> G["On-Demand LLM Case Summary"]
-    F --> H["On-Demand Money Trail Graph"]
+## Core Features
 
-    I["Policy PDF"] --> J["Clause Extraction"]
-    J --> K["LLM-First Rule Extraction"]
-    K --> L["Heuristic Fallback"]
-    L --> M["Draft Candidate Controls in UI"]
-```
+### Rule-based AML detection
 
-## Core Product Features
-
-### 1. Rule-based AML detection
-The backend loads policy rules from PostgreSQL and runs them against a transaction sample. The current rule families include:
+The backend loads policy rules from PostgreSQL and evaluates them against a transaction sample. Current rule families include:
 
 - `THRESHOLD`
 - `FORMAT`
@@ -116,11 +136,13 @@ The backend loads policy rules from PostgreSQL and runs them against a transacti
 - `CHAIN`
 - `BIPARTITE`
 
-### 2. Account-level suspicious activity grouping
-Alerts are grouped by account instead of being treated as isolated transactions. This makes the system better suited for investigation rather than simple transaction filtering.
+### Account-level grouping
 
-### 3. Typology classification
-Grouped alerts are mapped into laundering patterns such as:
+Alerts are grouped by account instead of being treated as isolated suspicious transactions. That makes the system more useful for investigation than simple transaction filtering.
+
+### Typology classification
+
+Grouped alerts are mapped into patterns such as:
 
 - `STRUCTURING`
 - `SMURFING`
@@ -130,41 +152,33 @@ Grouped alerts are mapped into laundering patterns such as:
 
 `UNKNOWN` is intentional. I did not want to force every suspicious account into a confident laundering label when the evidence was weak.
 
-### 4. ML anomaly scoring
-AMLer uses Isolation Forest to score suspicious accounts and prioritize which cases deserve analyst attention first.
+### ML prioritization
 
-The ML layer is used as a ranking layer, not as the core detection engine.
+AMLer uses Isolation Forest to score suspicious accounts and rank which cases deserve analyst attention first. ML is used as a ranking layer, not as the main detection source.
 
-## Evaluation Interpretation
+### On-demand LLM case summaries
 
-The current metrics tell an honest story about the system:
-
-- AMLer is stronger at finding suspicious behavior than it is at filtering every false positive.
-- That is intentional for this stage of the project because missing laundering activity is usually the more expensive failure.
-- The evaluation output also gives a clear tuning path: threshold-based structuring rules currently dominate false positives.
-
-This tradeoff is part of the project, not something hidden from it.
-
-### 5. On-demand LLM case summaries
-The detail page can generate an AI summary for a selected account. The LLM explains:
+The account detail page can generate an AI summary for a selected account. The LLM explains:
 
 - likely risk level
 - why the account appears suspicious
-- what action an analyst should take next
+- what an analyst should do next
 
-This is done on demand instead of during the main `/analyze` request to keep the primary analysis flow fast.
+I made this on demand instead of running it inside `/analyze` so the main analysis flow stays fast.
 
-### 6. Money trail graph visualization
+### Money trail graph visualization
+
 The account detail page includes a PyVis graph that shows suspicious transfer paths for the selected account.
 
 - nodes represent accounts
 - edges represent aggregated suspicious transfer paths
 - edge thickness reflects total suspicious amount
 
-The graph is also generated on demand so the main analysis response stays lightweight.
+This is also generated on demand so the main response stays lightweight.
 
-### 7. Policy PDF ingestion
-AMLer can ingest a text-based PDF policy document and turn it into:
+### Policy PDF ingestion
+
+AMLer can ingest a text-based policy document and turn it into:
 
 - `PolicyClause` objects with page-level traceability
 - draft candidate compliance rules
@@ -174,18 +188,26 @@ The current extraction strategy is:
 - LLM-first structured extraction
 - heuristic fallback for narrower patterns
 
-Extracted rules are shown in the UI as `DRAFT` candidate controls and do not yet modify the live runtime detection flow.
+Extracted rules are shown in the UI as `DRAFT` candidate controls and do not directly modify the live runtime detection flow.
 
-## Important Design Decisions and Tradeoffs
+## Design Decisions and Tradeoffs
 
 | Decision | Why I chose it | Tradeoff |
 | --- | --- | --- |
-| Hybrid rules + typology + ML + LLM | AML is easier to explain when each layer has a clear role | More moving parts than a single-model system |
-| `UNKNOWN` is a valid typology | Prevents forced and misleading labels | Some accounts remain less interpretable without deeper review |
-| LLM summaries are on demand | Keeps `/analyze` fast and avoids unnecessary latency/cost | Requires an extra request in the detail flow |
-| Account graph is on demand | Graph data is only useful in the investigation view | Requires rebuilding account graph context separately |
-| Policy ingestion outputs draft controls only | Safer and more realistic than directly activating extracted rules | No full policy-to-runtime enforcement yet |
+| Hybrid rules + typology + ML + LLM | Each layer stays easier to explain and reason about | More moving parts than a single-model system |
+| `UNKNOWN` is a valid typology | Avoids forced and misleading labels | Some accounts remain less interpretable without deeper review |
+| LLM summaries are on demand | Keeps `/analyze` fast and avoids unnecessary latency | Requires an extra request in the detail flow |
+| Account graph is on demand | Graph data is most useful in the investigation view | Requires rebuilding graph context separately |
+| Policy ingestion outputs draft controls only | Safer and more realistic than auto-activating extracted rules | No full policy-to-runtime enforcement yet |
 | LLM-first extraction with fallback heuristics | Better semantic flexibility without losing deterministic coverage | Adds validation and pipeline complexity |
+
+## API Surface
+
+- `POST /analyze`
+- `POST /account-analysis`
+- `POST /account-graph`
+- `GET /evaluate`
+- `GET /health`
 
 ## Tech Stack
 
@@ -198,20 +220,22 @@ Extracted rules are shown in the UI as `DRAFT` candidate controls and do not yet
 - LLM integration: OpenAI-compatible HTTP endpoint via `httpx`
 - PDF parsing: `pypdf`
 - Graph visualization: PyVis
+- Local orchestration: Docker Compose
 
 ## Repository Structure
 
 ```text
 AMLer/
-  api/                    # API schemas and refactor-in-progress backend modules
+  api/                    # FastAPI routes and schemas
   compliance/             # Compliance runner and evaluator integration
-  core/                   # Shared config and DB setup
-  data/                   # Transaction data
-  demo/                   # Product Demo
+  core/                   # Shared config and database setup
+  data/                   # Small demo transaction dataset
+  demo/                   # Screenshots and demo assets
   evaluators/             # Rule family evaluators
   models/                 # Supporting dataclasses / ingestion models
   policy_extraction/      # LLM-first candidate rule extraction + heuristic fallback
   sample_pdf/             # Sample policy PDFs for ingestion demos
+  services/               # Backend workflow and orchestration logic
   ui/                     # Streamlit interface
   app.py                  # FastAPI entrypoint
   evaluate.py             # Evaluation script
@@ -224,101 +248,24 @@ AMLer/
   typology.py             # Account grouping and typology mapping
 ```
 
-## How the Investigation Flow Works
-
-### Main analysis flow
-1. Load a transaction sample.
-2. Load rules from PostgreSQL.
-3. Run compliance checks.
-4. Group suspicious activity by account.
-5. Assign typology labels.
-6. Score suspicious accounts with Isolation Forest.
-7. Show ranked accounts in the Streamlit UI.
-8. Let the user open one account for deeper investigation.
-9. Generate an LLM case summary on demand.
-10. Generate a money trail graph on demand.
-
-### Policy ingestion flow
-1. Load a text-based PDF.
-2. Normalize and split the text into clauses.
-3. Preserve page and heading context.
-4. Ask the LLM whether a clause is an executable rule.
-5. Validate structured output.
-6. Fall back to heuristic extractors when the LLM does not return a safe rule.
-7. Show candidate rules in the UI as reviewable drafts.
-
-## Current API Surface
-
-- `POST /analyze`
-  - runs the main AML pipeline
-- `POST /account-analysis`
-  - generates an on-demand AI case summary for one selected account
-- `POST /account-graph`
-  - generates an on-demand graph payload for one selected account
-- `GET /evaluate`
-  - returns evaluation metrics against ground truth
-
-## Running the Project Locally
+## Running Locally
 
 ### Prerequisites
 
 - Python 3.11+
 - PostgreSQL
-- a local or remote OpenAI-compatible LLM endpoint for LLM features
-  - for example LM Studio
+- an OpenAI-compatible LLM endpoint for LLM features
 
-### 1. Create and activate a virtual environment
+### Local run
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-```
-
-### 2. Install dependencies
-
-```powershell
 pip install -r requirements.txt
-```
-
-### 3. Configure environment variables
-
-Use `.env.example` as the starting point for local config.
-
-Expected variables:
-
-- `DATABASE_URL`
-- `SQL_ECHO`
-- `LLM_BASE_URL`
-- `LLM_MODEL`
-- `LLM_TIMEOUT_SECONDS`
-- `API_BASE_URL`
-- `DEFAULT_SAMPLE_SIZE`
-
-### 4. Initialize the database schema
-
-```powershell
-python inital.py
-```
-
-### 5. Seed starter rules
-
-```powershell
+python initial.py
 python rule_seeder.py
-```
-
-### 5.5 Reproduce the evaluation snapshot
-
-```powershell
-python evaluate.py
-```
-
-### 6. Start the FastAPI backend
-
-```powershell
 uvicorn app:app --reload
 ```
-
-### 7. Start the Streamlit UI
 
 In a second terminal:
 
@@ -326,17 +273,39 @@ In a second terminal:
 streamlit run ui/interface.py
 ```
 
-## Walkthrough
+### Evaluation
 
-You can walkthrough the system :
+```powershell
+python evaluate.py
+```
 
-1. Run analysis on a transaction sample.
-2. Open the top suspicious account in `Account Detail`.
-3. Generate the AI case summary.
-4. Generate the money trail graph.
-5. Open the `Policy Ingestion` page.
-6. Upload a text-based PDF or use a bundled sample from `sample_pdf/`.
-7. Show how clauses are turned into draft candidate controls.
+## Running with Docker
+
+AMLer can also be started as a local multi-container stack using Docker Compose.
+
+### Services
+
+- `db` - PostgreSQL
+- `api` - FastAPI backend
+- `ui` - Streamlit frontend
+
+### Start the stack
+
+```powershell
+docker compose up --build
+```
+
+### Access the app
+
+- UI: `http://localhost:8501`
+- API health: `http://localhost:8000/health`
+
+### Notes
+
+- the Docker setup uses a small demo dataset for local runs
+- larger source datasets are intentionally kept out of Git and Docker images
+- LLM-backed features require a host-side OpenAI-compatible endpoint
+- in the current setup, containers reach the host-side LLM through `host.docker.internal`
 
 ## What This Project Demonstrates
 
@@ -361,39 +330,28 @@ AMLer is meant to show more than model training. It demonstrates:
 - on-demand money trail graph visualization
 - policy PDF ingestion with draft rule extraction
 - evaluation metrics and false-positive reporting
+- local Docker Compose stack for FastAPI, Streamlit, and PostgreSQL
 
 ### In progress
 
-- backend modularization and service-layer refactor
-- Dockerization
 - deployment polish
+- cloud hosting / public deployment
+- final infrastructure cleanup and health-check refinement
 
 ### Intentionally deferred
 
 - activating extracted policy rules directly in runtime
 - OCR support for scanned PDFs
 - full production-grade approval workflow for extracted rules
-- cloud deployment hardening
+- cloud production hardening
 
 ## Limitations
 
-- LLM-backed features depend on an available OpenAI-compatible endpoint.
-- Policy ingestion currently expects text-based PDFs rather than scanned documents.
-- Extracted policy rules are review artifacts, not active runtime controls.
-- Some backend orchestration still lives in `app.py` while the refactor is in progress.
+- LLM-backed features depend on a reachable OpenAI-compatible endpoint
+- policy ingestion currently expects text-based PDFs rather than scanned documents
+- extracted policy rules are review artifacts, not active runtime controls
+- the Docker stack is optimized for local/demo deployment rather than hardened cloud production
 
-## Key Technical Takeaways
+## Final Note
 
-If you are reviewing this project as a portfolio piece, the key technical story is:
-
-- Rules handle interpretable suspicious activity detection.
-- Typology maps raw alerts into recognizable laundering behavior.
-- ML prioritizes the cases that deserve attention first.
-- The LLM is used where it adds the most value: explanation and policy interpretation.
-- The UI is designed around investigation depth, not just alert counts.
-
-## Final Summary
-
-AMLer is a multi-stage AML investigation system built to be explainable, interactive, and honest about tradeoffs. The project intentionally separates detection, prioritization, explanation, and policy interpretation so that each layer stays understandable and useful.
-
-That design choice is the core of my project.
+AMLer is my attempt to build an AML system that is not just accurate enough to be useful, but also explainable enough to be trusted. The main thing I wanted to show with this project is that detection, prioritization, explanation, and policy interpretation do not have to be collapsed into one black box. They can be separated into layers that are easier to reason about and improve.
