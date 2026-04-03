@@ -16,7 +16,7 @@ app.include_router(analysis_router)
 app.include_router(account_detail_router)
 app.include_router(evaluation_router)
 
-@app.post("/health")
+@app.get("/health")
 async def health_check():
     return {"backend": "AML Compliance Agent", "status": "healthy"}
 

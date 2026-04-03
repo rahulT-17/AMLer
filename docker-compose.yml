@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16
+    container_name: amler-db
+    environment:
+      POSTGRES_DB: aml_compliance
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: amler-api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/aml_compliance
+      SQL_ECHO: "false"
+      API_BASE_URL: http://api:8000
+      DEFAULT_SAMPLE_SIZE: "5000"
+      LLM_BASE_URL: http://host.docker.internal:1234/v1/chat/completions
+      LLM_MODEL: mistralai/mistral-7b-instruct-v0.3
+      LLM_TIMEOUT_SECONDS: "120"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  ui: 
+    build: 
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: amler-ui
+    environment:
+      API_BASE_URL: http://api:8000
+      DEFAULT_SAMPLE_SIZE: "5000"
+      LLM_BASE_URL: http://host.docker.internal:1234/v1/chat/completions
+      LLM_MODEL: mistralai/mistral-7b-instruct-v0.3
+      LLM_TIMEOUT_SECONDS: "120"
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+
+ 
