@@ -1,0 +1,15 @@
+.git
+.venv
+.vscode
+__pycache__
+*.pyc
+*.pyo
+*.ipynb
+.ipynb_checkpoints
+*.code-workspace
+demo
+documentation
+test
+repo-backup.bundle
+.env
+data/original.csv
