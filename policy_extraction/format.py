@@ -49,8 +49,10 @@ def extract_format_rule(clause: PolicyClause) -> ExtractedPolicyRule | None:
         if any(word in text for word in ["must", "shall", "required", "flagged"])
         else "MEDIUM"
     )
-
-    rule_name = f"format_{field_target}_{pattern.replace('$', 'end').replace('\\', '')}"
+    
+    safe_pattern = pattern.replace("$", "end").replace("\\", "")
+    rule_name = f"format_{field_target}_{safe_pattern}"
+    
 
     return ExtractedPolicyRule(
         name=rule_name,
