@@ -4,6 +4,9 @@ AMLer is a hybrid Anti-Money Laundering investigation system that combines rule-
 
 This project was built as a portfolio piece around a simple idea: AML tools should not just flag transactions, they should help an analyst understand why an account is suspicious, what pattern it resembles, and what to investigate next.
 
+## STATUS 
+currently working on the docker
+
 ![AMLer Architecture](demo/architecture.png)
 
 _Here is the interactive architectural flow of AMLer._
