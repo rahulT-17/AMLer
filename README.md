@@ -15,7 +15,7 @@ At a high level, AMLer uses rules to detect suspicious activity, typology logic 
 
 ## High-Level Architecture
 
-![AMLer architecture](/C:/Users/rahul/Documents/AMLer/demo/architecture.png)
+![AMLer architecture](demo/architecture.png)
 
 _High-level flow of the investigation and policy-ingestion paths._
 
@@ -53,19 +53,19 @@ This made the project much easier to demo and much closer to a realistic full-st
 
 ### Investigation Dashboard
 
-![AMLer investigation dashboard](/C:/Users/rahul/Documents/AMLer/demo/dashboard.png)
+![AMLer investigation dashboard](/demo/dashboard.png)
 
 _The dashboard is built for triage first: run the pipeline, inspect suspicious accounts, then move into detail only when needed._
 
 ### Account Detail View
 
-![AMLer account detail](/C:/Users/rahul/Documents/AMLer/demo/account-detail.png)
+![AMLer account detail](demo/account-detail.png)
 
 _The account detail view combines rule evidence, ML signals, an on-demand LLM case summary, and a PyVis money trail graph so one case can be reviewed end to end._
 
 ### Evaluation View
 
-![AMLer evaluation dashboard](/C:/Users/rahul/Documents/AMLer/demo/evaluation.png)
+![AMLer evaluation dashboard](demo/evaluation.png)
 
 _The evaluation page makes the current precision/recall tradeoff explicit and shows which rules are driving false positives._
 
