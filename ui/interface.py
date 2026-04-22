@@ -22,6 +22,7 @@ from core.config import settings
 
 API = settings.api_base_url
 DEFAULT_SAMPLE_SIZE = settings.default_sample_size
+LLM_ENABLED = settings.llm_enabled
 PAGES = ["Run Analysis", "Transaction Feed", "Account Detail", "Evaluation", "Policy Ingestion"]
 
 
@@ -1183,21 +1184,27 @@ def render_account_detail():
                 unsafe_allow_html=True,
             )
         else:
-            st.markdown(
-                "<div class='empty-state'>No AI case summary has been generated for this account yet.</div>",
-                unsafe_allow_html=True,
-            )
-            if st.button("Generate AI Case Summary", key=f"generate_llm_{selected.get('account')}", type="primary"):
-                with st.spinner("Generating account summary..."):
-                    try:
-                        llm_response = run_account_analysis_request(selected)
-                    except requests.RequestException as exc:
-                        st.error(f"Account analysis request failed: {exc}")
-                    else:
-                        llm_cache = get_llm_account_summary_map()
-                        llm_cache[selected.get("account")] = llm_response
-                        st.session_state["llm_account_summaries"] = llm_cache
-                        st.rerun()
+            if not LLM_ENABLED:
+                st.markdown(
+                    "<div class='empty-state'>AI case summaries are disabled in this public demo deployment.</div>",
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    "<div class='empty-state'>No AI case summary has been generated for this account yet.</div>",
+                    unsafe_allow_html=True,
+                )
+                if st.button("Generate AI Case Summary", key=f"generate_llm_{selected.get('account')}", type="primary"):
+                    with st.spinner("Generating account summary..."):
+                        try:
+                            llm_response = run_account_analysis_request(selected)
+                        except requests.RequestException as exc:
+                            st.error(f"Account analysis request failed: {exc}")
+                        else:
+                            llm_cache = get_llm_account_summary_map()
+                            llm_cache[selected.get("account")] = llm_response
+                            st.session_state["llm_account_summaries"] = llm_cache
+                            st.rerun()
 
 
 def render_evaluation():
@@ -1289,10 +1296,15 @@ def render_policy_ingestion():
         with control_col:
             st.markdown("<div class='section-kicker'>Source</div>", unsafe_allow_html=True)
             st.markdown("**Choose a policy document**")
+            if not LLM_ENABLED:
+                st.markdown(
+                    "<div class='subtle-note'>This deployment is running heuristic-only policy extraction (LLM disabled).</div>",
+                    unsafe_allow_html=True,
+                )
 
             raw_sample_options = {
-                "Happy path sample": Path("documentation") / "sample_policy.pdf",
-                "Edge-case sample": Path("documentation") / "sample_policy_edge_cases.pdf",
+                "Happy path sample": Path("sample_pdf") / "sample_policy.pdf",
+                "Edge-case sample": Path("sample_pdf") / "sample_policy_edge_cases.pdf",
             }
             sample_options = {
                 label: str(path) for label, path in raw_sample_options.items() if path.exists()
