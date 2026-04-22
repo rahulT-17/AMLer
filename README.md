@@ -13,6 +13,13 @@ It combines:
 
 At a high level, AMLer uses rules to detect suspicious activity, typology logic to interpret it, ML to prioritize it, and LLMs to explain it.
 
+## Live Demo
+
+- UI: [AMLer UI](https://huggingface.co/spaces/rahulT-17/AMLer-ui)
+- API: [AMLer API](https://huggingface.co/spaces/rahulT-17/AMLer-api)
+
+The public deployment runs with `LLM_ENABLED=false`, so the hosted demo focuses on the core investigation flow, ML prioritization, graph generation, evaluation dashboard, and heuristic policy-ingestion path without depending on a live model endpoint.
+
 ## High-Level Architecture
 
 ![AMLer architecture](demo/architecture.png)
@@ -307,6 +314,16 @@ docker compose up --build
 - LLM-backed features require a host-side OpenAI-compatible endpoint
 - in the current setup, containers reach the host-side LLM through `host.docker.internal`
 
+## Public Deployment
+
+AMLer is also deployed as a free hosted demo using:
+
+- Hugging Face Spaces for the Streamlit UI
+- Hugging Face Spaces for the FastAPI API
+- Supabase for PostgreSQL
+
+This deployment is meant for portfolio review and product walkthroughs rather than hardened production use. The public version keeps the main AML investigation workflow live while disabling hosted LLM calls for stability and cost control.
+
 ## What This Project Demonstrates
 
 AMLer is meant to show more than model training. It demonstrates:
@@ -331,12 +348,13 @@ AMLer is meant to show more than model training. It demonstrates:
 - policy PDF ingestion with draft rule extraction
 - evaluation metrics and false-positive reporting
 - local Docker Compose stack for FastAPI, Streamlit, and PostgreSQL
+- public hosted demo for the UI, API, and PostgreSQL-backed analysis flow
 
 ### In progress
 
-- deployment polish
-- cloud hosting / public deployment
-- final infrastructure cleanup and health-check refinement
+- final hosted-demo polish
+- public demo UX refinement
+- infrastructure cleanup and health-check refinement
 
 ### Intentionally deferred
 
@@ -348,6 +366,7 @@ AMLer is meant to show more than model training. It demonstrates:
 ## Limitations
 
 - LLM-backed features depend on a reachable OpenAI-compatible endpoint
+- the public hosted demo runs with `LLM_ENABLED=false`, so AI summaries and LLM-backed extraction are intentionally disabled there
 - policy ingestion currently expects text-based PDFs rather than scanned documents
 - extracted policy rules are review artifacts, not active runtime controls
 - the Docker stack is optimized for local/demo deployment rather than hardened cloud production
