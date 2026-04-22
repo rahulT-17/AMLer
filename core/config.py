@@ -40,6 +40,7 @@ _load_env_file()
 class Settings:
     database_url: str
     sql_echo: bool
+    llm_enabled: bool
     llm_base_url: str
     llm_model: str
     llm_timeout_seconds: float
@@ -53,6 +54,7 @@ settings = Settings(
         "postgresql+asyncpg://postgres:your_password@localhost:5432/aml_compliance",
     ),
     sql_echo=_get_bool("SQL_ECHO", False),
+    llm_enabled=_get_bool("LLM_ENABLED", True),
     llm_base_url=os.getenv("LLM_BASE_URL", "http://localhost:1234/v1/chat/completions"),
     llm_model=os.getenv("LLM_MODEL", "mistralai/mistral-7b-instruct-v0.3"),
     llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "120")),

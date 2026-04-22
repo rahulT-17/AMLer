@@ -90,6 +90,14 @@ Analyze this account and return your JSON assessment.
       }
     ]
 
+    if not settings.llm_enabled:
+        return {
+            "typology": typology,
+            "risk_level": "UNKNOWN",
+            "reasoning": "LLM analysis is disabled in this deployment",
+            "recommendation": "MANUAL_REVIEW"
+        }
+
     # CALL LM STUDIO
     try:
         async with httpx.AsyncClient(timeout=settings.llm_timeout_seconds) as client:
