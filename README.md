@@ -53,7 +53,7 @@ This made the project much easier to demo and much closer to a realistic full-st
 
 ### Investigation Dashboard
 
-![AMLer investigation dashboard](/demo/dashboard.png)
+![AMLer investigation dashboard](demo/dashboard.png)
 
 _The dashboard is built for triage first: run the pipeline, inspect suspicious accounts, then move into detail only when needed._
 
