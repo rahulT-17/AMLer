@@ -1,6 +1,3 @@
-# this script is used as the entrypoint for the FastAPI server in the Docker container.
-# It waits for PostgreSQL to be ready, initializes the database tables, seeds any started rules, and then starts the FastAPI server using uvicorn.
-
 #!/bin/sh
 set -e
 

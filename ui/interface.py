@@ -1296,11 +1296,6 @@ def render_policy_ingestion():
         with control_col:
             st.markdown("<div class='section-kicker'>Source</div>", unsafe_allow_html=True)
             st.markdown("**Choose a policy document**")
-            if not LLM_ENABLED:
-                st.markdown(
-                    "<div class='subtle-note'>This deployment is running heuristic-only policy extraction (LLM disabled).</div>",
-                    unsafe_allow_html=True,
-                )
 
             raw_sample_options = {
                 "Happy path sample": Path("sample_pdf") / "sample_policy.pdf",
